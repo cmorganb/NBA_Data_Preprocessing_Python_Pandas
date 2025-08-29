@@ -25,14 +25,11 @@ def clean_data(path):
     # Parsing height, weight, and salary features as floats
     df[['height', 'weight', 'salary']] = df[['height', 'weight', 'salary']].astype(float)
 
+    # Categorizing the country feature as "USA" and "Not-USA"
+    df['country'] = df['country'].apply(lambda x: 'NOT USA' if x != 'USA' else x)
 
-
-
-
-
-
-
-
+    # Replacing the cells containing "Undrafted" in the draft_round feature with the string "0"
+    df['draft_round'] = df['draft_round'].apply(lambda x: '0' if x == 'Undrafted' else x)
 
     return df
 
