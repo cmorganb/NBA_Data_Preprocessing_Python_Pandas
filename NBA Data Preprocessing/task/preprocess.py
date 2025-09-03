@@ -1,35 +1,53 @@
 import pandas as pd
 import os
 import requests
+import datetime
 
 
 def clean_data(path):
+    """
+    Receives the path of a NBA dataset and returns a cleaned dataframe by applying the following steps:
+      - Parsing the b_day and draft_year features as datetime objects
+      - Replacing the missing values in team feature with "No Team"
+      - Taking the height feature in meters and removes the customary units
+      - Taking the weight feature in meters and removes the customary units
+      - Removing the extraneous $ character from the salary feature
+      - Parsing height, weight, and salary features as floats
+      - Categorizing the country feature as "USA" and "Not-USA"
+      - Replacing the cells containing "Undrafted" in the draft_round feature with the string "0"
+    """
     df = pd.read_csv(path)
 
-    # Parsing the b_day and draft_year features as datetime objects
     df['b_day'] = pd.to_datetime(df['b_day'], format="%m/%d/%y")
     df['draft_year'] = pd.to_datetime(df['draft_year'], format="%Y")
-
-    # Replacing the missing values in team feature with "No Team"
     df['team'] = df['team'].fillna("No Team")
-
-    # Taking the height feature in meters and removes the customary units
     df['height'] =  df['height'].apply(lambda x: x.split("/")[1].strip().split()[0])
-
-    # Taking the weight feature in meters and removes the customary units
     df['weight'] = df['weight'].apply(lambda x: x.split("/")[1].strip().split()[0])
-
-    # Removing the extraneous $ character from the salary feature
     df['salary'] = df['salary'].apply(lambda x: x.replace('$', ''))
-
-    # Parsing height, weight, and salary features as floats
     df[['height', 'weight', 'salary']] = df[['height', 'weight', 'salary']].astype(float)
-
-    # Categorizing the country feature as "USA" and "Not-USA"
-    df['country'] = df['country'].apply(lambda x: 'NOT USA' if x != 'USA' else x)
-
-    # Replacing the cells containing "Undrafted" in the draft_round feature with the string "0"
+    df['country'] = df['country'].apply(lambda x: 'Not-USA' if x != 'USA' else x)
     df['draft_round'] = df['draft_round'].apply(lambda x: '0' if x == 'Undrafted' else x)
+
+    return df
+
+def feature_data(df):
+    """
+    Receives a clean dataset and returns a dataset composed of feature data by:
+    - Engineering the age, experience and bmi features
+    - Dropping high cardinality and dependent features
+    """
+
+    df['version'] = pd.to_datetime(df['version'], format='NBA2k%y')
+    df['age'] = df['ver_year'].dt.year - df['b_day'].dt.year
+    df['experience'] = df['ver_year'].dt.year - df['draft_year'].dt.year
+    df['bmi'] = df['weight'] / df['height'] ** 2
+
+    df = df.drop(columns=['draft_year', 'b_day', 'weight', 'height', 'ver_year', 'version'])
+
+    # Identify categorical columns and drop the ones with high cardinality (50 or more unique values)
+    categorical_cols = df.select_dtypes(include=['category', 'object']).columns.tolist()
+    cols_to_drop = [col for col in df.columns if col in categorical_cols and df[col].nunique() >= 50]
+    df = df.drop(columns=cols_to_drop)
 
     return df
 
@@ -49,7 +67,8 @@ def main():
 
     data_path = "../Data/nba2k-full.csv"
 
-    clean_data(data_path)
+    clean_df = clean_data(data_path)
+    feature_data(clean_df)
 
 if __name__ == "__main__":
     main()
