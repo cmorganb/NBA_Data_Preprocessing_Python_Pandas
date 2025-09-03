@@ -42,7 +42,7 @@ def feature_data(df):
     df['experience'] = df['ver_year'].dt.year - df['draft_year'].dt.year
     df['bmi'] = df['weight'] / df['height'] ** 2
 
-    df = df.drop(columns=['draft_year', 'b_day', 'weight', 'height', 'ver_year', 'version'])
+    df = df.drop(columns=['draft_year', 'b_day', 'weight', 'height', 'version'])
 
     # Identify categorical columns and drop the ones with high cardinality (50 or more unique values)
     categorical_cols = df.select_dtypes(include=['category', 'object']).columns.tolist()
