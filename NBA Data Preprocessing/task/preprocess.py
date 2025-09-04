@@ -55,9 +55,8 @@ def multicol_data(df):
     Receives a dataframe and returns it without the multicollinear features
     """
 
-    categorical_cols = df.select_dtypes(include=['category', 'object']).columns.tolist()
-    df = df.drop(columns=categorical_cols)
-    df_corr = df.corr()
+    numeric_df = df.select_dtypes(include=['number'])
+    df_corr = numeric_df.corr()
 
     cols_to_drop = set()
     for i in df_corr.index.to_list():
@@ -69,9 +68,7 @@ def multicol_data(df):
                     else:
                         cols_to_drop.add(i)
 
-    df = df.drop(columns=cols_to_drop)
-
-    return df
+    return df.drop(columns=cols_to_drop)
 
 
 
