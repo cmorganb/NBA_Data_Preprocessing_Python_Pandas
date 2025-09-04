@@ -1,12 +1,11 @@
 import pandas as pd
 import os
 import requests
-import datetime
 
 
 def clean_data(path):
     """
-    Receives the path of a NBA dataset and returns a cleaned dataframe by applying the following steps:
+    Receives the path of an NBA dataset and returns a cleaned dataframe by applying the following steps:
       - Parsing the b_day and draft_year features as datetime objects
       - Replacing the missing values in team feature with "No Team"
       - Taking the height feature in meters and removes the customary units
@@ -38,8 +37,8 @@ def feature_data(df):
     """
 
     df['version'] = pd.to_datetime(df['version'], format='NBA2k%y')
-    df['age'] = df['ver_year'].dt.year - df['b_day'].dt.year
-    df['experience'] = df['ver_year'].dt.year - df['draft_year'].dt.year
+    df['age'] = df['version'].dt.year - df['b_day'].dt.year
+    df['experience'] = df['version'].dt.year - df['draft_year'].dt.year
     df['bmi'] = df['weight'] / df['height'] ** 2
 
     df = df.drop(columns=['draft_year', 'b_day', 'weight', 'height', 'version'])
@@ -50,6 +49,30 @@ def feature_data(df):
     df = df.drop(columns=cols_to_drop)
 
     return df
+
+def multicol_data(df):
+    """
+    Receives a dataframe and returns it without the multicollinear features
+    """
+
+    categorical_cols = df.select_dtypes(include=['category', 'object']).columns.tolist()
+    df = df.drop(columns=categorical_cols)
+    df_corr = df.corr()
+
+    cols_to_drop = set()
+    for i in df_corr.index.to_list():
+        for col in df_corr.columns:
+            if i != 'salary' and col != 'salary':
+                if i != col and abs(df_corr.loc[i, col]) > 0.5:
+                    if df_corr.loc[i, 'salary'] > df_corr.loc[col, 'salary']:
+                        cols_to_drop.add(col)
+                    else:
+                        cols_to_drop.add(i)
+
+    df = df.drop(columns=cols_to_drop)
+
+    return df
+
 
 
 def main():
@@ -68,7 +91,8 @@ def main():
     data_path = "../Data/nba2k-full.csv"
 
     clean_df = clean_data(data_path)
-    feature_data(clean_df)
+    feature_df = feature_data(clean_df)
+    multicol_data(feature_df)
 
 if __name__ == "__main__":
     main()
