@@ -61,12 +61,11 @@ def multicol_data(df):
     cols_to_drop = set()
     for i in df_corr.index.to_list():
         for col in df_corr.columns:
-            if i != 'salary' and col != 'salary':
-                if i != col and abs(df_corr.loc[i, col]) > 0.5:
-                    if df_corr.loc[i, 'salary'] > df_corr.loc[col, 'salary']:
-                        cols_to_drop.add(col)
-                    else:
-                        cols_to_drop.add(i)
+            if i != 'salary' and col != 'salary' and i != col and abs(df_corr.loc[i, col]) > 0.5:
+                if df_corr.loc[i, 'salary'] > df_corr.loc[col, 'salary']:
+                    cols_to_drop.add(col)
+                else:
+                    cols_to_drop.add(i)
 
     return df.drop(columns=cols_to_drop)
 
