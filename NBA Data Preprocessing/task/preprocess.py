@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 import requests
-
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 def clean_data(path):
     """
@@ -68,6 +68,31 @@ def multicol_data(df):
 
     return df
 
+def transform_data(df):
+    """
+    Receives a dataframe without multicollinearity and
+    returns the matrix X and the target y after scaling the numerical and categorical features
+    using StandardScaler and OneHotEncoder respectively
+    """
+
+    y = df['salary']
+    df = df.drop(columns='salary')
+
+    numeric_df = df.select_dtypes(include=['number'])
+    categorical_df = df.select_dtypes(include=['category', 'object'])
+
+    scaler_std = StandardScaler()
+    df_standard = scaler_std.fit_transform(numeric_df)
+    df_standard = pd.DataFrame(df_standard, columns=numeric_df.columns)
+
+    onehot_encoder = OneHotEncoder(sparse_output=False)
+    df_onehot = onehot_encoder.fit_transform(categorical_df)
+    onehot_categories = [item for arr in onehot_encoder.categories_ for item in arr]
+    df_onehot = pd.DataFrame(df_onehot, columns=onehot_categories)
+
+    X = pd.concat([df_standard, df_onehot], axis=1)
+
+    return X, y
 
 
 def main():
@@ -85,9 +110,17 @@ def main():
 
     data_path = "../Data/nba2k-full.csv"
 
-    clean_df = clean_data(data_path)
-    feature_df = feature_data(clean_df)
-    multicol_data(feature_df)
+    df_cleaned = clean_data(data_path)
+    df_featured = feature_data(df_cleaned)
+    df = multicol_data(df_featured)
+
+    X, y = transform_data(df)
+
+    answer = {
+        'shape': [X.shape, y.shape],
+        'features': list(X.columns),
+        }
+    print(answer)
 
 if __name__ == "__main__":
     main()
